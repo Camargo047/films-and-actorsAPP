@@ -1,3 +1,5 @@
+import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
@@ -21,7 +23,7 @@ import kotlinx.coroutines.launch
 class AppViewModel(
     private val appDao: AppDao,
     private val savedStateHandle: SavedStateHandle
-) : ViewModel(){
+) : ViewModel() {
 
     private var movieId = MutableStateFlow(0)
     private var actorId = MutableStateFlow(0)
@@ -49,7 +51,7 @@ class AppViewModel(
             .stateIn(
                 scope = viewModelScope,
                 started = SharingStarted.WhileSubscribed(5_000L),
-                initialValue = MovieWithActors(Movie(0,""), listOf())
+                initialValue = MovieWithActors(Movie(0, ""), listOf())
             )
 
     val actorWithMovies: StateFlow<ActorWithMovies> =
@@ -59,168 +61,98 @@ class AppViewModel(
             .stateIn(
                 scope = viewModelScope,
                 started = SharingStarted.WhileSubscribed(5_000L),
-                initialValue = ActorWithMovies(Actor(0,""), listOf())
+                initialValue = ActorWithMovies(Actor(0, ""), listOf())
             )
 
-    fun insertActor(actor: Actor){
+    val uiState: MutableState<ScreenState> = mutableStateOf(ScreenState.MovieList)
+
+    fun insertActor(actor: Actor) {
         viewModelScope.launch {
             appDao.insertActor(actor)
         }
     }
 
-    fun updateActor(actor: Actor){
+    fun updateActor(actor: Actor) {
         viewModelScope.launch {
             appDao.updateActor(actor)
         }
     }
 
-    fun deleteActor(actor: Actor){
+    fun deleteActor(actor: Actor) {
         viewModelScope.launch {
             appDao.deleteActor(actor)
         }
     }
 
-    fun insertMovie(movie: Movie){
+    fun insertMovie(movie: Movie) {
         viewModelScope.launch {
             appDao.insertMovie(movie)
         }
     }
 
-    fun updateMovie(movie: Movie){
+    fun updateMovie(movie: Movie) {
         viewModelScope.launch {
             appDao.updateMovie(movie)
         }
     }
 
-    fun deleteMovie(movie: Movie){
+    fun deleteMovie(movie: Movie) {
         viewModelScope.launch {
             appDao.deleteMovie(movie)
         }
     }
 
-    fun insertMovieActor(movieActor: MovieActor){
+    fun insertMovieActor(movieActor: MovieActor) {
         viewModelScope.launch {
             appDao.insertMovieActor(movieActor)
         }
     }
 
-    fun deleteMovieActor(movieActor: MovieActor){
+    fun deleteMovieActor(movieActor: MovieActor) {
         viewModelScope.launch {
             appDao.deleteMovieActor(movieActor)
         }
     }
 
-    fun selectMovie(movie: Movie){
+    fun selectMovie(movie: Movie) {
         movieId.value = movie.id
+        uiState.value = ScreenState.MovieDetail(movie.id)
     }
 
-    fun selectActor(actor: Actor){
+    fun selectActor(actor: Actor) {
         actorId.value = actor.id
+        uiState.value = ScreenState.ActorDetail(actor.id)
     }
 
-    fun insertActorsAndMovies() {
-        viewModelScope.launch {
+    fun navigateToMovieList() {
+        uiState.value = ScreenState.MovieList
+    }
 
-            val actors = listOf(
-                Actor(name = "Leonardo DiCaprio"), Actor(name = "Brad Pitt"), Actor(name = "Johnny Depp"),
-                Actor(name = "Tom Hanks"), Actor(name = "Morgan Freeman"), Actor(name = "Robert Downey Jr."),
-                Actor(name = "Will Smith"), Actor(name = "Scarlett Johansson"), Actor(name = "Jennifer Lawrence"),
-                Actor(name = "Tom Cruise"), Actor(name = "Chris Hemsworth"), Actor(name = "Chris Evans"),
-                Actor(name = "Mark Ruffalo"), Actor(name = "Chris Pratt"), Actor(name = "Ryan Reynolds"),
-                Actor(name = "Dwayne Johnson"), Actor(name = "Hugh Jackman"), Actor(name = "Christian Bale"),
-                Actor(name = "Matthew McConaughey"), Actor(name = "Anne Hathaway"), Actor(name = "Emma Stone"),
-                Actor(name = "Ryan Gosling"), Actor(name = "Natalie Portman"), Actor(name = "Gal Gadot"),
-                Actor(name = "Henry Cavill"), Actor(name = "Ben Affleck"), Actor(name = "Robert Pattinson"),
-                Actor(name = "Margot Robbie"), Actor(name = "Brie Larson"), Actor(name = "Zendaya")
-            )
+    fun navigateToActorList() {
+        uiState.value = ScreenState.ActorList
+    }
 
-            val movies = listOf(
-                Movie(name = "Inception"), Movie(name = "Fight Club"), Movie(name = "Pirates of the Caribbean"),
-                Movie(name = "The Dark Knight"), Movie(name = "The Avengers"), Movie(name = "Interstellar"),
-                Movie(name = "The Matrix"), Movie(name = "Titanic"), Movie(name = "Forrest Gump"),
-                Movie(name = "Gladiator"), Movie(name = "The Wolf of Wall Street"), Movie(name = "Avatar"),
-                Movie(name = "Black Panther"), Movie(name = "Mad Max: Fury Road"), Movie(name = "Wonder Woman")
-            )
-
-            val movieActorRelations = listOf(
-                // Inception
-                MovieActor(movieId = 1, actorId = 1), // Leonardo DiCaprio
-                MovieActor(movieId = 1, actorId = 20), // Anne Hathaway
-
-                // Fight Club
-                MovieActor(movieId = 2, actorId = 2), // Brad Pitt
-                MovieActor(movieId = 2, actorId = 18), // Edward Norton (não listado, mas presumido)
-
-                // Pirates of the Caribbean
-                MovieActor(movieId = 3, actorId = 3), // Johnny Depp
-                MovieActor(movieId = 3, actorId = 28), // Orlando Bloom (não listado, mas presumido)
-
-                // The Dark Knight
-                MovieActor(movieId = 4, actorId = 18), // Christian Bale
-                MovieActor(movieId = 4, actorId = 5), // Morgan Freeman
-
-                // The Avengers
-                MovieActor(movieId = 5, actorId = 8), // Scarlett Johansson
-                MovieActor(movieId = 5, actorId = 6), // Robert Downey Jr.
-                MovieActor(movieId = 5, actorId = 10), // Chris Evans
-                MovieActor(movieId = 5, actorId = 11), // Mark Ruffalo
-
-                // Interstellar
-                MovieActor(movieId = 6, actorId = 1), // Matthew McConaughey
-                MovieActor(movieId = 6, actorId = 20), // Anne Hathaway
-
-                // The Matrix
-                MovieActor(movieId = 7, actorId = 30), // Keanu Reeves (não listado, mas presumido)
-                MovieActor(movieId = 7, actorId = 24), // Laurence Fishburne (não listado, mas presumido)
-
-                // Titanic
-                MovieActor(movieId = 8, actorId = 1), // Leonardo DiCaprio
-                MovieActor(movieId = 8, actorId = 28), // Kate Winslet (não listado, mas presumido)
-
-                // Forrest Gump
-                MovieActor(movieId = 9, actorId = 4), // Tom Hanks
-
-                // Gladiator
-                MovieActor(movieId = 10, actorId = 29), // Russell Crowe (não listado, mas presumido)
-
-                // The Wolf of Wall Street
-                MovieActor(movieId = 11, actorId = 1), // Leonardo DiCaprio
-                MovieActor(movieId = 11, actorId = 27), // Margot Robbie
-
-                // Avatar
-                MovieActor(movieId = 12, actorId = 24), // Sam Worthington (não listado, mas presumido)
-                MovieActor(movieId = 12, actorId = 25), // Zoe Saldana (não listado, mas presumido)
-
-                // Black Panther
-                MovieActor(movieId = 13, actorId = 25), // Chadwick Boseman (não listado, mas presumido)
-
-                // Mad Max: Fury Road
-                MovieActor(movieId = 14, actorId = 30), // Tom Hardy (não listado, mas presumido)
-                MovieActor(movieId = 14, actorId = 27), // Charlize Theron (não listado, mas presumido)
-
-                // Wonder Woman
-                MovieActor(movieId = 15, actorId = 24), // Gal Gadot
-                MovieActor(movieId = 15, actorId = 28) // Chris Pine (não listado, mas presumido)
-            )
-
-            // Inserindo atores
-            appDao.insertAllActors(actors)
-
-            // Inserindo filmes
-            appDao.insertAllMovies(movies)
-
-            // Inserindo relações entre filmes e atores
-            appDao.insertAllRelations(movieActorRelations)
+    fun goBack() {
+        uiState.value = when (uiState.value) {
+            is ScreenState.MovieDetail -> ScreenState.MovieList
+            is ScreenState.ActorDetail -> ScreenState.ActorList
+            else -> ScreenState.MovieList
         }
     }
 
+    sealed class ScreenState {
+        object MovieList : ScreenState()
+        object ActorList : ScreenState()
+        data class MovieDetail(val movieId: Int) : ScreenState()
+        data class ActorDetail(val actorId: Int) : ScreenState()
+    }
 
     companion object {
-        val Factory : ViewModelProvider.Factory = object : ViewModelProvider.Factory {
+        val Factory: ViewModelProvider.Factory = object : ViewModelProvider.Factory {
             override fun <T : ViewModel> create(
                 modelClass: Class<T>,
                 extras: CreationExtras,
-            ) :T {
+            ): T {
                 val application = checkNotNull(extras[ViewModelProvider.AndroidViewModelFactory.APPLICATION_KEY])
                 val savedStateHandle = extras.createSavedStateHandle()
                 return AppViewModel(
